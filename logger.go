@@ -3,6 +3,7 @@ package sanlog
 import (
 	"bytes"
 	"fmt"
+	"github.com/fatih/color"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -175,7 +176,9 @@ func (l *Logger) writef(level LogLevel, format string, v []interface{}) {
 
 	buf.WriteByte('\n')
 
-	logQueue <- &logValue{value: buf.Bytes(), writer: l.writer}
+	msg :=withColor(level,buf.String())
+
+	logQueue <- &logValue{value: []byte(msg) ,writer: l.writer}
 }
 
 func flushLog() {
@@ -184,4 +187,24 @@ func flushLog() {
 			v.writer.Write(v.value)
 		}
 	}
+}
+
+func withColor(level LogLevel, msg string) string {
+	switch level {
+	case DEBUG:
+		return color.HiBlackString(msg)
+	case INFO:
+		return color.GreenString(msg)
+	case WARN:
+		return color.YellowString(msg)
+	case ERROR:
+		return color.RedString(msg)
+	case FATAL:
+		return color.RedString(msg)
+	case PANIC:
+		return color.RedString(msg)
+	default:
+		return msg
+	}
+	return msg
 }

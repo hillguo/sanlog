@@ -6,6 +6,7 @@ const (
 
 func init (){
 	l.SetCallerSkip(3)
+	l.SetLevel(DEBUG)
 }
 
 var l = GetLogger("sanlog")

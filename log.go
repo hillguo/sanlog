@@ -1,7 +1,7 @@
 package sanlog
 
 const (
-	calldepth = 3
+	calldepth = 4
 )
 
 var l = GetLogger("sanlog")

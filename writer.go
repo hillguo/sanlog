@@ -8,17 +8,21 @@ import (
 	"time"
 )
 
+//切割时间
 const (
 	DAY DateType = iota
 	HOUR
 )
 
+//DateType ...
 type DateType uint8
 
+//LogWriter ...
 type LogWriter interface {
 	Write(v []byte)
 }
 
+//ConsoleWriter ...
 type ConsoleWriter struct {
 }
 
@@ -26,6 +30,7 @@ func (w *ConsoleWriter) Write(v []byte) {
 	os.Stdout.Write(v)
 }
 
+//RollFileWriter ...
 type RollFileWriter struct {
 	logpath  string
 	name     string
@@ -78,6 +83,7 @@ func reOpenFile(path string, currFile **os.File, openTime *int64) {
 	}
 }
 
+//DateWriter ...
 type DateWriter struct {
 	logpath  string
 	name     string

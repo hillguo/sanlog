@@ -2,8 +2,8 @@ package sanlog
 
 import "time"
 
+//CurrUnixTime is current unix time
 var (
-	//CurrUnixTime is current unix time
 	CurrUnixTime int64
 	CurrDateTime string
 	CurrDateHour string

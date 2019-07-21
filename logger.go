@@ -5,31 +5,22 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"reflect"
 	"runtime"
 )
 
-const (
-	DEBUG LogLevel = iota
-	INFO
-	WARN
-	ERROR
-	OFF
-)
-
 var (
-	logLevel LogLevel = DEBUG
-	logQueue  = make(chan *logValue, 10000)
-   	loggerMap = make(map[string]*Logger)
-	writeDone = make(chan bool)
+	logQueue = make(chan *logValue, 10000)
 )
 
+func init() {
+	go flushLog()
+}
 
-type LogLevel uint8
-
+//Logger ...
 type Logger struct {
 	name   string
 	writer LogWriter
+	level  LogLevel
 }
 
 type logValue struct {
@@ -39,48 +30,22 @@ type logValue struct {
 	writer LogWriter
 }
 
-func init() {
-	go flushLog(true)
+//SetLevel ...
+func (l *Logger) SetLevel(level LogLevel) {
+	l.level = level
 }
 
-func (lv *LogLevel) String() string {
-	switch *lv {
-	case DEBUG:
-		return "DEBUG"
-	case INFO:
-		return "INFO"
-	case WARN:
-		return "WARN"
-	case ERROR:
-		return "ERROR"
-	default:
-		return "UNKNOWN"
-	}
-}
-
-func SetLevel(level LogLevel) {
-	logLevel = level
-}
-
-func StringToLevel(level string) LogLevel {
-	switch level {
-	case "DEBUG":
-		return DEBUG
-	case "INFO":
-		return INFO
-	case "WARN":
-		return WARN
-	case "ERROR":
-		return ERROR
-	default:
-		return DEBUG
-	}
-}
-
+//SetLogName ...
 func (l *Logger) SetLogName(name string) {
 	l.name = name
 }
 
+//SetWriter ...
+func (l *Logger) SetWriter(w LogWriter) {
+	l.writer = w
+}
+
+//SetFileRoller ...
 func (l *Logger) SetFileRoller(logpath string, num int, sizeMB int) error {
 	if err := os.MkdirAll(logpath, 0755); err != nil {
 		panic(err)
@@ -90,17 +55,7 @@ func (l *Logger) SetFileRoller(logpath string, num int, sizeMB int) error {
 	return nil
 }
 
-func (l *Logger) IsConsoleWriter() bool {
-	if reflect.TypeOf(l.writer) == reflect.TypeOf(&ConsoleWriter{}) {
-		return true
-	}
-	return false
-}
-
-func (l *Logger) SetWriter(w LogWriter) {
-	l.writer = w
-}
-
+//SetDayRoller ...
 func (l *Logger) SetDayRoller(logpath string, num int) error {
 	if err := os.MkdirAll(logpath, 0755); err != nil {
 		return err
@@ -110,6 +65,7 @@ func (l *Logger) SetDayRoller(logpath string, num int) error {
 	return nil
 }
 
+//SetHourRoller ...
 func (l *Logger) SetHourRoller(logpath string, num int) error {
 	if err := os.MkdirAll(logpath, 0755); err != nil {
 		return err
@@ -119,61 +75,86 @@ func (l *Logger) SetHourRoller(logpath string, num int) error {
 	return nil
 }
 
-func (l *Logger) SetConsole() {
-	l.writer = &ConsoleWriter{}
-}
-
+//Debug ...
 func (l *Logger) Debug(v ...interface{}) {
 	l.writef(DEBUG, "", v)
 }
 
+//Info ...
 func (l *Logger) Info(v ...interface{}) {
 	l.writef(INFO, "", v)
 }
 
+//Warn ...
 func (l *Logger) Warn(v ...interface{}) {
 	l.writef(WARN, "", v)
 }
 
+//Fatal ...
+func (l *Logger) Fatal(v ...interface{}) {
+	l.writef(FATAL, "", v)
+}
+
+//Error ...
 func (l *Logger) Error(v ...interface{}) {
 	l.writef(ERROR, "", v)
 }
 
+//Debugf ...
 func (l *Logger) Debugf(format string, v ...interface{}) {
 	l.writef(DEBUG, format, v)
 }
 
+//Infof ...
 func (l *Logger) Infof(format string, v ...interface{}) {
 	l.writef(INFO, format, v)
 }
 
+//Warnf ...
 func (l *Logger) Warnf(format string, v ...interface{}) {
 	l.writef(WARN, format, v)
 }
 
+//Errorf ...
 func (l *Logger) Errorf(format string, v ...interface{}) {
 	l.writef(ERROR, format, v)
 }
 
+//Fatalf ...
+func (l *Logger) Fatalf(format string, v ...interface{}) {
+	l.writef(FATAL, format, v)
+}
+
+// Panic is equivalent to l.Print() followed by a call to panic().
+func (l *Logger) Panic(v ...interface{}) {
+	l.writef(PANIC, "", v)
+	panic(v)
+}
+
+// Panicf is equivalent to l.Printf() followed by a call to panic().
+func (l *Logger) Panicf(format string, v ...interface{}) {
+	l.writef(PANIC, format, v)
+	panic(fmt.Sprintf(format, v...))
+}
+
 func (l *Logger) writef(level LogLevel, format string, v []interface{}) {
-	if level < logLevel {
+	if level < l.level {
 		return
 	}
 
 	buf := bytes.NewBuffer(nil)
-	if l.writer.NeedPrefix() {
-		fmt.Fprintf(buf, "%s|", CurrDateTime)
-		if logLevel == DEBUG {
-			_, file, line, ok := runtime.Caller(2)
-			if !ok {
-				file = "???"
-				line = 0
-			} else {
-				file = filepath.Base(file)
-			}
-			fmt.Fprintf(buf, "%s:%d|", file, line)
-		}
+
+	fmt.Fprintf(buf, "%s|", CurrDateTime)
+
+	_, file, line, ok := runtime.Caller(2)
+	if !ok {
+		file = "???"
+		line = 0
+	} else {
+		file = filepath.Base(file)
 	}
+	fmt.Fprintf(buf, "%s:%d|", file, line)
+
 	buf.WriteString(level.String())
 	buf.WriteByte('|')
 
@@ -182,30 +163,16 @@ func (l *Logger) writef(level LogLevel, format string, v []interface{}) {
 	} else {
 		fmt.Fprintf(buf, format, v...)
 	}
-	if l.writer.NeedPrefix() {
-		buf.WriteByte('\n')
-	}
+
+	buf.WriteByte('\n')
+
 	logQueue <- &logValue{value: buf.Bytes(), writer: l.writer}
 }
 
-func FlushLogger() {
-	flushLog(false)
-}
-
-func flushLog(sync bool) {
-	if sync {
-		for v := range logQueue {
+func flushLog() {
+	for v := range logQueue {
+		if v.writer != nil {
 			v.writer.Write(v.value)
-		}
-	} else {
-		for {
-			select {
-			case v := <-logQueue:
-				v.writer.Write(v.value)
-				continue
-			default:
-				return
-			}
 		}
 	}
 }

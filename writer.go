@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 )
+
 const (
 	DAY DateType = iota
 	HOUR
@@ -16,19 +17,13 @@ type DateType uint8
 
 type LogWriter interface {
 	Write(v []byte)
-	NeedPrefix() bool
 }
 
 type ConsoleWriter struct {
-
 }
 
 func (w *ConsoleWriter) Write(v []byte) {
 	os.Stdout.Write(v)
-}
-
-func (w *ConsoleWriter) NeedPrefix() bool {
-	return true
 }
 
 type RollFileWriter struct {
@@ -40,7 +35,6 @@ type RollFileWriter struct {
 	currFile *os.File
 	openTime int64
 }
-
 
 func (w *RollFileWriter) Write(v []byte) {
 	if w.currFile == nil || w.openTime+10 < CurrUnixTime {
@@ -69,10 +63,6 @@ func (w *RollFileWriter) Write(v []byte) {
 		fullPath := filepath.Join(w.logpath, w.name+".log")
 		reOpenFile(fullPath, &w.currFile, &w.openTime)
 	}
-}
-
-func (w *RollFileWriter) NeedPrefix() bool {
-	return true
 }
 
 func reOpenFile(path string, currFile **os.File, openTime *int64) {
@@ -113,10 +103,6 @@ func (w *DateWriter) Write(v []byte) {
 		return
 	}
 	w.currFile.Write(v)
-}
-
-func (w *DateWriter) NeedPrefix() bool {
-	return true
 }
 
 func (w *DateWriter) cleanOldLogs() {

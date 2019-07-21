@@ -4,6 +4,10 @@ const (
 	calldepth = 4
 )
 
+func init (){
+	l.SetCallerSkip(3)
+}
+
 var l = GetLogger("sanlog")
 
 //SetLogger ...

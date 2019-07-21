@@ -21,6 +21,7 @@ type Logger struct {
 	name   string
 	writer LogWriter
 	level  LogLevel
+	callerSkip int
 }
 
 type logValue struct {
@@ -28,6 +29,10 @@ type logValue struct {
 	value  []byte
 	fileNo string
 	writer LogWriter
+}
+
+func (l *Logger) SetCallerSkip(skip int) {
+	l.callerSkip = skip
 }
 
 //SetLevel ...
@@ -142,11 +147,15 @@ func (l *Logger) writef(level LogLevel, format string, v []interface{}) {
 		return
 	}
 
+	if l.callerSkip == 0 {
+		l.callerSkip = 2
+	}
+
 	buf := bytes.NewBuffer(nil)
 
 	fmt.Fprintf(buf, "%s|", CurrDateTime)
 
-	_, file, line, ok := runtime.Caller(2)
+	_, file, line, ok := runtime.Caller(l.callerSkip)
 	if !ok {
 		file = "???"
 		line = 0

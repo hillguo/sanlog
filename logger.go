@@ -19,9 +19,9 @@ func init() {
 
 //Logger ...
 type Logger struct {
-	name   string
-	writer LogWriter
-	level  LogLevel
+	name       string
+	writer     LogWriter
+	level      LogLevel
 	callerSkip int
 }
 
@@ -176,9 +176,9 @@ func (l *Logger) writef(level LogLevel, format string, v []interface{}) {
 
 	buf.WriteByte('\n')
 
-	msg :=withColor(level,buf.String())
+	msg := withColor(level, buf.String())
 
-	logQueue <- &logValue{value: []byte(msg) ,writer: l.writer}
+	logQueue <- &logValue{value: []byte(msg), writer: l.writer}
 }
 
 func flushLog() {
@@ -192,7 +192,7 @@ func flushLog() {
 func withColor(level LogLevel, msg string) string {
 	switch level {
 	case DEBUG:
-		return color.HiBlackString(msg)
+		return msg
 	case INFO:
 		return color.GreenString(msg)
 	case WARN:

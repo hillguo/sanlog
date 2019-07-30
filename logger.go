@@ -154,7 +154,7 @@ func (l *Logger) writef(level LogLevel, format string, v []interface{}) {
 
 	buf := bytes.NewBuffer(nil)
 
-	fmt.Fprintf(buf, "%s|", CurrDateTime)
+	fmt.Fprintf(buf, "%s ", CurrDateTime)
 
 	_, file, line, ok := runtime.Caller(l.callerSkip)
 	if !ok {
@@ -163,10 +163,10 @@ func (l *Logger) writef(level LogLevel, format string, v []interface{}) {
 	} else {
 		file = filepath.Base(file)
 	}
-	fmt.Fprintf(buf, "%s:%d|", file, line)
+	fmt.Fprintf(buf, "%s:%d [", file, line)
 
 	buf.WriteString(level.String())
-	buf.WriteByte('|')
+	buf.WriteString("] ")
 
 	if format == "" {
 		fmt.Fprint(buf, v...)

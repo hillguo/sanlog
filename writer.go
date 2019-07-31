@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-//切割时间
+//åˆ‡å‰²æ—¶é—´
 const (
 	DAY DateType = iota
 	HOUR

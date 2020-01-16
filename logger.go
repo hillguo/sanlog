@@ -22,6 +22,7 @@ type Logger struct {
 	name       string
 	writer     LogWriter
 	level      LogLevel
+	mode 	   int
 	callerSkip int
 }
 
@@ -32,6 +33,7 @@ type logValue struct {
 	writer LogWriter
 }
 
+//SetCallerSkip ...
 func (l *Logger) SetCallerSkip(skip int) {
 	l.callerSkip = skip
 }
@@ -178,7 +180,11 @@ func (l *Logger) writef(level LogLevel, format string, v []interface{}) {
 
 	msg := withColor(level, buf.String())
 
-	logQueue <- &logValue{value: []byte(msg), writer: l.writer}
+	if l.mode == 0 {
+		l.writer.Write([]byte(msg))
+	} else {
+		logQueue <- &logValue{value: []byte(msg), writer: l.writer}
+	}
 }
 
 func flushLog() {
@@ -206,5 +212,4 @@ func withColor(level LogLevel, msg string) string {
 	default:
 		return msg
 	}
-	return msg
 }

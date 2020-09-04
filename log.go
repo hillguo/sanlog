@@ -21,6 +21,11 @@ func SetLevel(level LogLevel) {
 	l.level = level
 }
 
+//SetWriter
+func SetWriter(w LogWriter) {
+	l.writer = w
+}
+
 //Debug ...
 func Debug(v ...interface{}) {
 	l.Debug(v...)

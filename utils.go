@@ -15,7 +15,7 @@ func GetLogger(name string) *Logger {
 	lg := &Logger{
 		name:   name,
 		writer: &ConsoleWriter{},
-		lFlags: Ldate | Lfile | Llevel,
+		lFlags: Ldate | Lfile | Llevel | Lcolor,
 	}
 	loggerMap[name] = lg
 	return lg

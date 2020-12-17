@@ -3,10 +3,11 @@ package sanlog
 import (
 	"bytes"
 	"fmt"
-	"github.com/fatih/color"
 	"os"
 	"path/filepath"
 	"runtime"
+
+	"github.com/fatih/color"
 )
 
 var (
@@ -17,13 +18,22 @@ func init() {
 	go flushLog()
 }
 
+// LDate
+const (
+	Ldate = 1 << iota
+	Lfile
+	Llevel
+)
+
 //Logger ...
 type Logger struct {
 	name       string
 	writer     LogWriter
 	level      LogLevel
-	mode 	   int
+	mode       int
 	callerSkip int
+
+	lFlags int
 }
 
 type logValue struct {
@@ -31,6 +41,16 @@ type logValue struct {
 	value  []byte
 	fileNo string
 	writer LogWriter
+}
+
+// SetFlag ...
+func (l *Logger) SetFlag(flag int) {
+	l.lFlags = l.lFlags | flag
+}
+
+// ClearFlag ...
+func (l *Logger) ClearFlag() {
+	l.lFlags = 0
 }
 
 //SetCallerSkip ...
@@ -156,19 +176,26 @@ func (l *Logger) writef(level LogLevel, format string, v []interface{}) {
 
 	buf := bytes.NewBuffer(nil)
 
-	fmt.Fprintf(buf, "%s ", CurrDateTime)
-
-	_, file, line, ok := runtime.Caller(l.callerSkip)
-	if !ok {
-		file = "???"
-		line = 0
-	} else {
-		file = filepath.Base(file)
+	if l.lFlags&Ldate != 0 {
+		fmt.Fprintf(buf, "%s ", CurrDateTime)
 	}
-	fmt.Fprintf(buf, "%s:%d [", file, line)
 
-	buf.WriteString(level.String())
-	buf.WriteString("] ")
+	if l.lFlags&Lfile != 0 {
+		_, file, line, ok := runtime.Caller(l.callerSkip)
+		if !ok {
+			file = "???"
+			line = 0
+		} else {
+			file = filepath.Base(file)
+		}
+		fmt.Fprintf(buf, "%s:%d ", file, line)
+	}
+
+	if l.lFlags&Llevel != 0 {
+		fmt.Fprintf(buf, "[")
+		buf.WriteString(level.String())
+		buf.WriteString("] ")
+	}
 
 	if format == "" {
 		fmt.Fprint(buf, v...)

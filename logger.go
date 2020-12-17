@@ -23,6 +23,7 @@ const (
 	Ldate = 1 << iota
 	Lfile
 	Llevel
+	Lcolor
 )
 
 //Logger ...
@@ -205,7 +206,10 @@ func (l *Logger) writef(level LogLevel, format string, v []interface{}) {
 
 	buf.WriteByte('\n')
 
-	msg := withColor(level, buf.String())
+	msg := buf.String()
+	if l.lFlags&Lcolor != 0 {
+		msg = withColor(level, msg)
+	}
 
 	if l.mode == 0 {
 		l.writer.Write([]byte(msg))
